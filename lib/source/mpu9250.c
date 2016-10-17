@@ -269,8 +269,8 @@ int8_t mpu9250_init(struct mpu9250_s *device, struct mpu9250_driver_s *driver, v
     }
 
     // TODO: Set default sampling rates & filters
-
-
+    
+#if 0
     // Enable compass
 
     // Enable master mode
@@ -305,7 +305,43 @@ int8_t mpu9250_init(struct mpu9250_s *device, struct mpu9250_driver_s *driver, v
     }
 
     //TODO: set compass auto trigger from MPU to regs
+#endif
 
+    return 0;
+}
+
+int8_t mpu9250_init_interrupt(struct mpu9250_s *device, uint8_t smplrt_div)
+{
+    int res;
+
+    // Setup FIFO
+    res = mpu9250_write_reg(device, MPU9250_REG_SMPLRT_DIV, smplrt_div);
+    res = mpu9250_write_reg(device, MPU9250_REG_CONFIG, 0x02);
+    res = mpu9250_write_reg(device, MPU9250_REG_GYRO_CONFIG, 0x00);
+    res = mpu9250_write_reg(device, MPU9250_REG_ACCEL_CONFIG_2, MPU9250_ACCEL_DPLF_CFG_92Hz_DELAY_7_80MS);
+    
+    // Ensure FIFO is reset
+    res = mpu9250_update_reg(device,     
+                             MPU9250_REG_USER_CTRL,
+                             MPU9250_USER_CTRL_FIFO_RST,
+                             MPU9250_USER_CTRL_FIFO_RST);
+    PLATFORM_SLEEP_MS(5);
+
+    // Enable FIFO
+    res = mpu9250_write_reg(device, MPU9250_REG_FIFO_EN, 
+                            MPU9250_FIFO_EN_GYRO_XOUT | MPU9250_FIFO_EN_GYRO_YOUT | 
+                            MPU9250_FIFO_EN_GYRO_ZOUT | MPU9250_FIFO_EN_ACCEL);
+    res = mpu9250_update_reg(device,
+                             MPU9250_REG_USER_CTRL,
+                             MPU9250_USER_CTRL_FIFO_EN,
+                             MPU9250_USER_CTRL_FIFO_EN);
+
+    // Setup interrupt pin to push-pull active high
+    // Latches to high and clears on data read
+    res = mpu9250_write_reg(device, MPU9250_REG_INT_PIN_CFG, 0x30);
+    
+    // Setup interrupt enable
+    res = mpu9250_write_reg(device, MPU9250_REG_INT_ENABLE, 0x01);
 
     return 0;
 }
@@ -343,6 +379,24 @@ int mpu9250_set_gyro_scale(struct mpu9250_s *device, mpu9250_gyro_scale_e scale)
                               MPU9250_REG_GYRO_CONFIG,
                               scale << MPU9250_GYRO_CONFIG_SCALE_SHIFT,
                               MPU9250_GYRO_CONFIG_SCALE_MASK);
+}
+
+int mpu9250_set_gyro_offset(struct mpu9250_s *device)
+{
+    //TODO: make this less gross
+    uint8_t X_OFFS[2] = {0xff, 0xf5};
+    uint8_t Y_OFFS[2] = {0xff, 0xdd};
+    uint8_t Z_OFFS[2] = {0xff, 0xec};
+    int res;
+
+    res = mpu9250_write_reg(device, MPU9250_REG_XG_OFFSET_H, X_OFFS[0]);
+    res = mpu9250_write_reg(device, MPU9250_REG_XG_OFFSET_L, X_OFFS[1]);
+    res = mpu9250_write_reg(device, MPU9250_REG_YG_OFFSET_H, Y_OFFS[0]);
+    res = mpu9250_write_reg(device, MPU9250_REG_YG_OFFSET_L, Y_OFFS[1]);
+    res = mpu9250_write_reg(device, MPU9250_REG_ZG_OFFSET_H, Z_OFFS[0]);
+    res = mpu9250_write_reg(device, MPU9250_REG_ZG_OFFSET_L, Z_OFFS[1]);
+
+    return res;
 }
 
 int mpu9250_set_accel_scale(struct mpu9250_s *device, mpu9250_accel_scale_e scale)
@@ -472,6 +526,43 @@ int mpu9250_read_compass_raw(struct mpu9250_s *device, int16_t *temp, int16_t *x
         *y = (int16_t)data_in[2] << 8 | data_in[3];
         *z = (int16_t)data_in[4] << 8 | data_in[5];
     }
+    return res;
+}
+
+int mpu9250_read_fifo_count(struct mpu9250_s *device, int16_t *count)
+{
+    uint8_t data_in[2];
+    int res;
+    
+    res = mpu9250_read_regs(device, MPU9250_REG_FIFO_COUNTH, 2, data_in);
+    if (res >= 0) {
+        *count = (int16_t)data_in[0] << 8 | data_in[1];
+    }
+    
+    return res;
+}
+
+int mpu9250_read_fifo(struct mpu9250_s *device, int16_t count, int16_t vals[])
+{
+    uint8_t data_in[2] = {0xff, 0xff};
+    int res;
+    int i = 0;
+
+    while (i < count) {
+        // Asssuming that if the low bit reads fine the high bit did too
+        res = mpu9250_read_reg(device, MPU9250_REG_FIFO_R_W, data_in);
+        res = mpu9250_read_reg(device, MPU9250_REG_FIFO_R_W, data_in + 1);
+        if (res >= 0) {
+            vals[i] = (int16_t)data_in[0] << 8 | data_in[1];
+        } else {
+            return res;
+        }
+        i++;
+    }
+
+    res = mpu9250_read_reg(device, MPU9250_REG_FIFO_R_W, data_in);
+    res = mpu9250_read_reg(device, MPU9250_REG_FIFO_R_W, data_in + 1);
+
     return res;
 }
 

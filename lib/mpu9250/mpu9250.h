@@ -36,12 +36,16 @@ struct mpu9250_driver_s {
 // Note that the device and driver objects must continue to exist outside this scope.
 int8_t mpu9250_init(struct mpu9250_s *device, struct mpu9250_driver_s *driver, void* driver_ctx);
 
+// Initialise interrupts for mpu9250 device
+int8_t mpu9250_init_interrupt(struct mpu9250_s *device, uint8_t smplrt_div);
+
 // Close an mpu9250 device
 int8_t mpu9250_close(struct mpu9250_s *device);
 
 
 /****       Configuration           ****/
 int mpu9250_set_gyro_scale(struct mpu9250_s *device, mpu9250_gyro_scale_e scale);
+int mpu9250_set_gyro_offset(struct mpu9250_s *device);
 int mpu9250_set_accel_scale(struct mpu9250_s *device, mpu9250_accel_scale_e scale);
 
 /****       Raw readings            ****/
@@ -52,9 +56,10 @@ int mpu9250_read_temp_raw(struct mpu9250_s *device, int16_t *temp);
 /****       Processed readings      ****/
 int mpu9250_read_gyro(struct mpu9250_s *device, float *x, float *y, float *z);
 int mpu9250_read_accel(struct mpu9250_s *device, float *x, float *y, float *z);
-int mpu9250_read_temp(struct mpu9250_s *device, float* temp);
+int mpu9250_read_temp(struct mpu9250_s *device, float *temp);
 
-
+int mpu9250_read_fifo_count(struct mpu9250_s *device, int16_t *count);
+int mpu9250_read_fifo(struct mpu9250_s *device, int16_t count, int16_t vals[]);
 
 #ifdef __cplusplus
 }

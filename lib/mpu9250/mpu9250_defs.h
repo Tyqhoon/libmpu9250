@@ -79,6 +79,16 @@ typedef enum {
 
 #define MPU9250_I2C_MST_CTRL_CLK_MSK        0x07        //!< Mask for I2C clock in I2C_MST_CTRL register
 
+// FIFO enable masks
+#define MPU9250_FIFO_EN_TEMP_OUT    (1 << 7)
+#define MPU9250_FIFO_EN_GYRO_XOUT   (1 << 6)
+#define MPU9250_FIFO_EN_GYRO_YOUT   (1 << 5)
+#define MPU9250_FIFO_EN_GYRO_ZOUT   (1 << 4)
+#define MPU9250_FIFO_EN_ACCEL       (1 << 3)
+#define MPU9250_FIFO_EN_SLV_2       (1 << 2)
+#define MPU9250_FIFO_EN_SLV_1       (1 << 1)
+#define MPU9250_FIFO_EN_SLV_0       (1 << 0)
+
 /**
  * I2C Master clock frequencies
  * Used in the I2C_MST_CTRL register
