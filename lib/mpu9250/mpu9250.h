@@ -36,6 +36,9 @@ struct mpu9250_driver_s {
 // Note that the device and driver objects must continue to exist outside this scope.
 int8_t mpu9250_init(struct mpu9250_s *device, struct mpu9250_driver_s *driver, void* driver_ctx);
 
+// For resetting fifo buffer
+int8_t mpu9250_reset_fifo(struct mpu9250_s *device);
+
 // Initialise interrupts for mpu9250 device
 int8_t mpu9250_init_interrupt(struct mpu9250_s *device, uint8_t smplrt_div);
 

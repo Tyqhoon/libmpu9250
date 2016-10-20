@@ -310,21 +310,27 @@ int8_t mpu9250_init(struct mpu9250_s *device, struct mpu9250_driver_s *driver, v
     return 0;
 }
 
+int8_t mpu9250_reset_fifo(struct mpu9250_s *device)
+{
+    return mpu9250_update_reg(device,     
+                              MPU9250_REG_USER_CTRL,
+                              MPU9250_USER_CTRL_FIFO_RST,
+                              MPU9250_USER_CTRL_FIFO_RST);
+}
+
 int8_t mpu9250_init_interrupt(struct mpu9250_s *device, uint8_t smplrt_div)
 {
     int res;
 
     // Setup FIFO
     res = mpu9250_write_reg(device, MPU9250_REG_SMPLRT_DIV, smplrt_div);
-    res = mpu9250_write_reg(device, MPU9250_REG_CONFIG, 0x02);
+    res = mpu9250_write_reg(device, MPU9250_REG_CONFIG, 0x40 | 0x02);
     res = mpu9250_write_reg(device, MPU9250_REG_GYRO_CONFIG, 0x00);
     res = mpu9250_write_reg(device, MPU9250_REG_ACCEL_CONFIG_2, MPU9250_ACCEL_DPLF_CFG_92Hz_DELAY_7_80MS);
     
     // Ensure FIFO is reset
-    res = mpu9250_update_reg(device,     
-                             MPU9250_REG_USER_CTRL,
-                             MPU9250_USER_CTRL_FIFO_RST,
-                             MPU9250_USER_CTRL_FIFO_RST);
+    mpu9250_reset_fifo(device);
+    
     PLATFORM_SLEEP_MS(5);
 
     // Enable FIFO
