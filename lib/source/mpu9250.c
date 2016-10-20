@@ -385,7 +385,7 @@ int mpu9250_set_gyro_offset(struct mpu9250_s *device)
 {
     //TODO: make this less gross
     uint8_t X_OFFS[2] = {0xff, 0xf5};
-    uint8_t Y_OFFS[2] = {0xff, 0xdd};
+    uint8_t Y_OFFS[2] = {0xff, 0xe3};
     uint8_t Z_OFFS[2] = {0xff, 0xec};
     int res;
 
